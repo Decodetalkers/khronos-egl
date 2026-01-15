@@ -60,7 +60,7 @@
 //!
 //! #### Static API Instance
 //!
-//! It may be bothering in some applications to pass the `Instance` to every fonction that needs to call the EGL API.
+//! It may be bothering in some applications to pass the `Instance` to every function that needs to call the EGL API.
 //! One workaround would be to define a static `Instance`,
 //! which should be possible to define at compile time using static linking.
 //! However this is not yet supported by the stable `rustc` compiler.
@@ -93,7 +93,7 @@
 //!
 //! Here, `egl::EGL1_4` is used to specify what is the minimum required version of EGL that must be provided by `libEGL.so.1`.
 //! This will return a `DynamicInstance<egl::EGL1_4>`, however in that case where `libEGL.so.1` provides a more recent version of EGL,
-//! you can still upcast ths instance to provide version specific features:
+//! you can still upcast this instance to provide version specific features:
 //! ```
 //! # extern crate khronos_egl as egl;
 //! # let lib = unsafe { libloading::Library::new("libEGL.so.1") }.expect("unable to find libEGL.so.1");
@@ -132,6 +132,7 @@ use std::ffi::CStr;
 use std::ffi::CString;
 use std::fmt;
 use std::ptr;
+use std::sync::LazyLock;
 
 use libc::{c_char, c_uint, c_void};
 
@@ -2099,9 +2100,9 @@ macro_rules! api {
 								return Ok(result)
 							}
 						},
-						Err(libloading::Error::DlSym { desc }) => {
+						Err(libloading::Error::DlSym { source }) => {
 							if Version::$id == Version::EGL1_0 {
-								return Err(libloading::Error::DlSym { desc }) // we require at least EGL 1.0.
+								return Err(libloading::Error::DlSym { source }) // we require at least EGL 1.0.
 							} else {
 								return Ok(result)
 							}
@@ -2246,7 +2247,7 @@ macro_rules! api {
 			///
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the input library complies to the EGL API.
-			pub unsafe fn load_from_filename<P: AsRef<std::ffi::OsStr>>(filename: P) -> Result<DynamicInstance<EGL1_0>, libloading::Error> {
+			pub unsafe fn load_from_filename<P: libloading::AsFilename>(filename: P) -> Result<DynamicInstance<EGL1_0>, libloading::Error> {
 				#[cfg(target_os = "linux")]
 				let lib: libloading::Library = {
 					// On Linux, load library with `RTLD_NOW | RTLD_NODELETE` to fix a SIGSEGV
@@ -2469,7 +2470,7 @@ macro_rules! api {
 			///
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the input library complies to the EGL API.
-			pub unsafe fn load_required_from_filename<P: AsRef<std::ffi::OsStr>>(filename: P) -> Result<DynamicInstance<$id>, LoadError<libloading::Error>> {
+			pub unsafe fn load_required_from_filename<P: libloading::AsFilename>(filename: P) -> Result<DynamicInstance<$id>, LoadError<libloading::Error>> {
 				#[cfg(target_os = "linux")]
 				let lib: libloading::Library = {
 					// On Linux, load library with `RTLD_NOW | RTLD_NODELETE` to fix a SIGSEGV
