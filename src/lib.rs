@@ -19,9 +19,10 @@
 //! necessary to find the EGL library at compile time.
 //! Here is a simple example showing how to use this library to create an EGL context when static linking is enabled.
 //!
-//! ```rust
+//! ```rust, ignore
 //! use khronos_egl as egl;
 //! use wayland_client::Connection;
+//! use wayland_client::Proxy;
 //!
 //! fn main() -> Result<(), egl::Error> {
 //!   // Create an EGL API instance.
@@ -30,7 +31,7 @@
 //!   let connection = Connection::connect_to_env().expect("unable to connect to the wayland server");
 //!   let wayland_display = connection.display();
 //!
-//!   let display = unsafe { egl.get_display(wayland_display.get_display_ptr() as *mut std::ffi::c_void) }.unwrap();
+//!   let display = unsafe { egl.get_display(wayland_display.id().as_ptr() as *mut std::ffi::c_void) }.unwrap();
 //!   egl.initialize(display)?;
 //!
 //!   let attributes = [
@@ -72,6 +73,7 @@
 //!
 //! ```
 //! # extern crate khronos_egl as egl;
+//! #[cfg(feature="static")]
 //! use egl::API as egl;
 //! ```
 //!
@@ -87,8 +89,8 @@
 //! necessary to find the EGL library at runtime.
 //! You can then load the EGL API into a `Instance<Dynamic<libloading::Library>>` as follows:
 //!
-//! ```
-//! # extern crate khronos_egl as egl;
+//! ``` ignore
+//! # use khronos_egl as egl;
 //! let lib = unsafe { libloading::Library::new("libEGL.so.1") }.expect("unable to find libEGL.so.1");
 //! let egl = unsafe { egl::DynamicInstance::<egl::EGL1_4>::load_required_from(lib) }.expect("unable to load libEGL.so.1");
 //! ```
@@ -96,8 +98,8 @@
 //! Here, `egl::EGL1_4` is used to specify what is the minimum required version of EGL that must be provided by `libEGL.so.1`.
 //! This will return a `DynamicInstance<egl::EGL1_4>`, however in that case where `libEGL.so.1` provides a more recent version of EGL,
 //! you can still upcast this instance to provide version specific features:
-//! ```
-//! # extern crate khronos_egl as egl;
+//! ``` ignore
+//! # use khronos_egl as egl;
 //! # let lib = unsafe { libloading::Library::new("libEGL.so.1") }.expect("unable to find libEGL.so.1");
 //! # let egl = unsafe { egl::DynamicInstance::<egl::EGL1_4>::load_required_from(lib) }.expect("unable to load libEGL.so.1");
 //! match egl.upcast::<egl::EGL1_5>() {
@@ -122,7 +124,7 @@
 //! ```
 //! ##[link(name = "EGL")]
 //! ##[link(name = "GLESv2")]
-//! extern {}
+//! unsafe extern "C" {}
 //! ```
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
@@ -615,21 +617,24 @@ mod egl1_0 {
 		///
 		/// ## Example
 		///
-		/// ```
-		/// # extern crate khronos_egl as egl;
-		/// # extern crate wayland_client;
+		/// ```ignore
+		/// # use khronos_egl as egl;
+		/// # use wayland_client;
+		/// # use wayland_client::Proxy;
 		/// # fn main() -> Result<(), egl::Error> {
 		/// # let egl = egl::Instance::new(egl::Static);
-		/// # let wayland_display = wayland_client::Display::connect_to_env().expect("unable to connect to the wayland server");
-		/// # let display = unsafe { egl.get_display(wayland_display.get_display_ptr() as *mut std::ffi::c_void) }.unwrap();
+		/// # let connection = Connection::connect_to_env().expect("unable to connect to the wayland server");
+		/// # let wayland_display = connection.display();
+		///
+		/// # let display = unsafe { egl.get_display(wayland_display.id().as_ptr() as *mut std::ffi::c_void) }.unwrap();
 		/// # egl.initialize(display)?;
 		/// # let attrib_list = [egl::RED_SIZE, 8, egl::GREEN_SIZE, 8, egl::BLUE_SIZE, 8, egl::NONE];
 		/// // Get the number of matching configurations.
-		/// let count = egl.matching_config_count(display, &attrib_list)?;
+		/// # let count = egl.matching_config_count(display, &attrib_list)?;
 		///
-		/// // Get the matching configurations.
-		/// let mut configs = Vec::with_capacity(count);
-		/// egl.choose_config(display, &attrib_list, &mut configs)?;
+		/// # // Get the matching configurations.
+		/// # let mut configs = Vec::with_capacity(count);
+		/// # egl.choose_config(display, &attrib_list, &mut configs)?;
 		/// # Ok(())
 		/// # }
 		/// ```
@@ -676,13 +681,15 @@ mod egl1_0 {
 		///
 		/// This is an helper function that will call `choose_config` with a buffer of
 		/// size 1, which is equivalent to:
-		/// ```
-		/// # extern crate khronos_egl as egl;
-		/// # extern crate wayland_client;
+		/// ```ignore
+		/// /// # use khronos_egl as egl;
+		/// # use wayland_client::{Connection, Proxy};
 		/// # fn main() -> Result<(), egl::Error> {
 		/// # let egl = egl::Instance::new(egl::Static);
-		/// # let wayland_display = wayland_client::Display::connect_to_env().expect("unable to connect to the wayland server");
-		/// # let display = unsafe { egl.get_display(wayland_display.get_display_ptr() as *mut std::ffi::c_void) }.unwrap();
+		/// # let connection = Connection::connect_to_env().expect("unable to connect to the wayland server");
+		/// # let wayland_display = connection.display();
+		///
+		/// # let display = unsafe { egl.get_display(wayland_display.id().as_ptr() as *mut std::ffi::c_void) }.unwrap();
 		/// # egl.initialize(display)?;
 		/// # let attrib_list = [egl::RED_SIZE, 8, egl::GREEN_SIZE, 8, egl::BLUE_SIZE, 8, egl::NONE];
 		/// let mut configs = Vec::with_capacity(1);
@@ -912,12 +919,13 @@ mod egl1_0 {
 		/// You can use it to setup the correct capacity for the configurations buffer in [`get_configs`](Self::get_configs).
 		///
 		/// ## Example
-		/// ```
-		/// # extern crate khronos_egl as egl;
-		/// # extern crate wayland_client;
+		/// ```ignore
+		/// # use khronos_egl as egl;
+		/// # use wayland_client::{Connection, Proxy};
 		/// # fn main() -> Result<(), egl::Error> {
 		/// # let egl = egl::Instance::new(egl::Static);
-		/// # let wayland_display = wayland_client::Display::connect_to_env().expect("unable to connect to the wayland server");
+		/// # let connection = Connection::connect_to_env().expect("unable to connect to the wayland server");
+		/// # let wayland_display = connection.display();
 		/// # let display = unsafe { egl.get_display(wayland_display.get_display_ptr() as *mut std::ffi::c_void) }.unwrap();
 		/// # egl.initialize(display)?;
 		/// let mut configs = Vec::with_capacity(egl.get_config_count(display)?);
@@ -949,11 +957,15 @@ mod egl1_0 {
 		/// and setup the buffer's capacity accordingly.
 		///
 		/// ## Example
-		/// ```
-		/// # extern crate khronos_egl as egl;
-		/// # extern crate wayland_client;
+		/// ``` ignore
+		/// # use khronos_egl as egl;
+		/// # use wayland_client::{Connection, Proxy};
 		/// # fn main() -> Result<(), egl::Error> {
 		/// # let egl = egl::Instance::new(egl::Static);
+		/// # let connection = Connection::connect_to_env().expect("unable to connect to the wayland server");
+		/// # let wayland_display = connection.display();
+		///
+		/// # let display = unsafe { egl.get_display(wayland_display.id().as_ptr() as *mut std::ffi::c_void) }.unwrap();
 		/// # let wayland_display = wayland_client::Display::connect_to_env().expect("unable to connect to the wayland server");
 		/// # let display = unsafe { egl.get_display(wayland_display.get_display_ptr() as *mut std::ffi::c_void) }.unwrap();
 		/// # egl.initialize(display)?;

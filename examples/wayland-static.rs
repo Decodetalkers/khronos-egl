@@ -348,19 +348,21 @@ pub fn check_gl_errors() {
 
 unsafe fn check_shader_status(shader: GLuint) {
 	let mut status = gl::FALSE as GLint;
-	gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut status);
+	unsafe { gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut status) };
 	if status != (gl::TRUE as GLint) {
 		let mut len = 0;
-		gl::GetProgramiv(shader, gl::INFO_LOG_LENGTH, &mut len);
+		unsafe { gl::GetProgramiv(shader, gl::INFO_LOG_LENGTH, &mut len) };
 		if len > 0 {
 			let mut buf = Vec::with_capacity(len as usize);
-			buf.set_len((len as usize) - 1); // subtract 1 to skip the trailing null character
-			gl::GetProgramInfoLog(
-				shader,
-				len,
-				ptr::null_mut(),
-				buf.as_mut_ptr() as *mut GLchar,
-			);
+			unsafe {
+				buf.set_len((len as usize) - 1); // subtract 1 to skip the trailing null character
+				gl::GetProgramInfoLog(
+					shader,
+					len,
+					ptr::null_mut(),
+					buf.as_mut_ptr() as *mut GLchar,
+				)
+			};
 
 			let log = String::from_utf8(buf).unwrap();
 			eprintln!("shader compilation log:\n{}", log);
