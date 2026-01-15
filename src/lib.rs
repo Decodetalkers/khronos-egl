@@ -480,20 +480,40 @@ mod egl1_0 {
 		fn message(&self) -> &'static str {
 			use Error::*;
 			match self {
-				NotInitialized => "EGL is not initialized, or could not be initialized, for the specified EGL display connection.",
-				BadAccess => "EGL cannot access a requested resource (for example a context is bound in another thread.",
+				NotInitialized => {
+					"EGL is not initialized, or could not be initialized, for the specified EGL display connection."
+				}
+				BadAccess => {
+					"EGL cannot access a requested resource (for example a context is bound in another thread."
+				}
 				BadAlloc => "EGL failed to allocate resources for the requested operation.",
-				BadAttribute => "An unrecognized attribute or attribute value was passed in the attribute list.",
+				BadAttribute => {
+					"An unrecognized attribute or attribute value was passed in the attribute list."
+				}
 				BadContext => "An Context argument does not name a valid EGL rendering context.",
-				BadConfig => "An Config argument does not name a valid EGL frame buffer configuration.",
-				BadCurrentSurface => "The current surface of the calling thread is a window, pixel buffer or pixmap that is no longer valid.",
+				BadConfig => {
+					"An Config argument does not name a valid EGL frame buffer configuration."
+				}
+				BadCurrentSurface => {
+					"The current surface of the calling thread is a window, pixel buffer or pixmap that is no longer valid."
+				}
 				BadDisplay => "An Display argument does not name a valid EGL display connection.",
-				BadSurface => "An Surface argument does not name a valid surface (window, pixel buffer or pixmap) configured for GL rendering.",
-				BadMatch => "Arguments are inconsistent (for example, a valid context requires buffers not supplied by a valid surface.",
+				BadSurface => {
+					"An Surface argument does not name a valid surface (window, pixel buffer or pixmap) configured for GL rendering."
+				}
+				BadMatch => {
+					"Arguments are inconsistent (for example, a valid context requires buffers not supplied by a valid surface."
+				}
 				BadParameter => "One or more argument values are invalid.",
-				BadNativePixmap => "A NativePixmapType argument does not refer to a valid native pixmap.",
-				BadNativeWindow => "A NativeWindowType argument does not refer to a valid native window.",
-				ContextLost => "A power management event has occurred. The application must destroy all contexts and reinitialise OpenGL ES state and objects to continue rendering."
+				BadNativePixmap => {
+					"A NativePixmapType argument does not refer to a valid native pixmap."
+				}
+				BadNativeWindow => {
+					"A NativeWindowType argument does not refer to a valid native window."
+				}
+				ContextLost => {
+					"A power management event has occurred. The application must destroy all contexts and reinitialise OpenGL ES state and objects to continue rendering."
+				}
 			}
 		}
 	}
@@ -779,18 +799,20 @@ mod egl1_0 {
 			pixmap: NativePixmapType,
 			attrib_list: &[Int],
 		) -> Result<Surface, Error> {
-			check_int_list(attrib_list)?;
-			let surface = self.api.eglCreatePixmapSurface(
-				display.as_ptr(),
-				config.as_ptr(),
-				pixmap,
-				attrib_list.as_ptr(),
-			);
+			unsafe {
+				check_int_list(attrib_list)?;
+				let surface = self.api.eglCreatePixmapSurface(
+					display.as_ptr(),
+					config.as_ptr(),
+					pixmap,
+					attrib_list.as_ptr(),
+				);
 
-			if surface != NO_SURFACE {
-				Ok(Surface(surface))
-			} else {
-				Err(self.get_error().unwrap())
+				if surface != NO_SURFACE {
+					Ok(Surface(surface))
+				} else {
+					Err(self.get_error().unwrap())
+				}
 			}
 		}
 
@@ -810,25 +832,27 @@ mod egl1_0 {
 			window: NativeWindowType,
 			attrib_list: Option<&[Int]>,
 		) -> Result<Surface, Error> {
-			let attrib_list = match attrib_list {
-				Some(attrib_list) => {
-					check_int_list(attrib_list)?;
-					attrib_list.as_ptr()
+			unsafe {
+				let attrib_list = match attrib_list {
+					Some(attrib_list) => {
+						check_int_list(attrib_list)?;
+						attrib_list.as_ptr()
+					}
+					None => ptr::null(),
+				};
+
+				let surface = self.api.eglCreateWindowSurface(
+					display.as_ptr(),
+					config.as_ptr(),
+					window,
+					attrib_list,
+				);
+
+				if surface != NO_SURFACE {
+					Ok(Surface(surface))
+				} else {
+					Err(self.get_error().unwrap())
 				}
-				None => ptr::null(),
-			};
-
-			let surface = self.api.eglCreateWindowSurface(
-				display.as_ptr(),
-				config.as_ptr(),
-				window,
-				attrib_list,
-			);
-
-			if surface != NO_SURFACE {
-				Ok(Surface(surface))
-			} else {
-				Err(self.get_error().unwrap())
 			}
 		}
 
@@ -1006,12 +1030,14 @@ mod egl1_0 {
 		/// platform may require that native_display be a pointer to a Windows
 		/// Device Context.
 		pub unsafe fn get_display(&self, display_id: NativeDisplayType) -> Option<Display> {
-			let display = self.api.eglGetDisplay(display_id);
+			unsafe {
+				let display = self.api.eglGetDisplay(display_id);
 
-			if display != NO_DISPLAY {
-				Some(Display(display))
-			} else {
-				None
+				if display != NO_DISPLAY {
+					Some(Display(display))
+				} else {
+					None
+				}
 			}
 		}
 
@@ -1042,7 +1068,7 @@ mod egl1_0 {
 
 				let addr = self.api.eglGetProcAddress(string.as_ptr());
 				if !addr.is_null() {
-					Some(std::mem::transmute(addr))
+					Some(std::mem::transmute::<*const (), extern "system" fn()>(addr))
 				} else {
 					None
 				}
@@ -1627,14 +1653,16 @@ mod egl1_5 {
 			ty: Enum,
 			attrib_list: &[Attrib],
 		) -> Result<Sync, Error> {
-			check_attrib_list(attrib_list)?;
-			let sync = self
-				.api
-				.eglCreateSync(display.as_ptr(), ty, attrib_list.as_ptr());
-			if sync != NO_SYNC {
-				Ok(Sync(sync))
-			} else {
-				Err(self.get_error().unwrap())
+			unsafe {
+				check_attrib_list(attrib_list)?;
+				let sync = self
+					.api
+					.eglCreateSync(display.as_ptr(), ty, attrib_list.as_ptr());
+				if sync != NO_SYNC {
+					Ok(Sync(sync))
+				} else {
+					Err(self.get_error().unwrap())
+				}
 			}
 		}
 
@@ -1645,10 +1673,12 @@ mod egl1_5 {
 		/// If display does not match the display passed to eglCreateSync when
 		/// sync was created, the behaviour is undefined.
 		pub unsafe fn destroy_sync(&self, display: Display, sync: Sync) -> Result<(), Error> {
-			if self.api.eglDestroySync(display.as_ptr(), sync.as_ptr()) == TRUE {
-				Ok(())
-			} else {
-				Err(self.get_error().unwrap())
+			unsafe {
+				if self.api.eglDestroySync(display.as_ptr(), sync.as_ptr()) == TRUE {
+					Ok(())
+				} else {
+					Err(self.get_error().unwrap())
+				}
 			}
 		}
 
@@ -1665,13 +1695,15 @@ mod egl1_5 {
 			flags: Int,
 			timeout: Time,
 		) -> Result<Int, Error> {
-			let status =
-				self.api
-					.eglClientWaitSync(display.as_ptr(), sync.as_ptr(), flags, timeout);
-			if status != FALSE as Int {
-				Ok(status)
-			} else {
-				Err(self.get_error().unwrap())
+			unsafe {
+				let status =
+					self.api
+						.eglClientWaitSync(display.as_ptr(), sync.as_ptr(), flags, timeout);
+				if status != FALSE as Int {
+					Ok(status)
+				} else {
+					Err(self.get_error().unwrap())
+				}
 			}
 		}
 
@@ -1687,17 +1719,19 @@ mod egl1_5 {
 			sync: Sync,
 			attribute: Int,
 		) -> Result<Attrib, Error> {
-			let mut value = 0;
-			if self.api.eglGetSyncAttrib(
-				display.as_ptr(),
-				sync.as_ptr(),
-				attribute,
-				&mut value as *mut Attrib,
-			) == TRUE
-			{
-				Ok(value)
-			} else {
-				Err(self.get_error().unwrap())
+			unsafe {
+				let mut value = 0;
+				if self.api.eglGetSyncAttrib(
+					display.as_ptr(),
+					sync.as_ptr(),
+					attribute,
+					&mut value as *mut Attrib,
+				) == TRUE
+				{
+					Ok(value)
+				} else {
+					Err(self.get_error().unwrap())
+				}
 			}
 		}
 
@@ -1768,15 +1802,17 @@ mod egl1_5 {
 			native_display: NativeDisplayType,
 			attrib_list: &[Attrib],
 		) -> Result<Display, Error> {
-			check_attrib_list(attrib_list)?;
+			unsafe {
+				check_attrib_list(attrib_list)?;
 
-			let display =
-				self.api
-					.eglGetPlatformDisplay(platform, native_display, attrib_list.as_ptr());
-			if display != NO_DISPLAY {
-				Ok(Display::from_ptr(display))
-			} else {
-				Err(self.get_error().unwrap())
+				let display =
+					self.api
+						.eglGetPlatformDisplay(platform, native_display, attrib_list.as_ptr());
+				if display != NO_DISPLAY {
+					Ok(Display::from_ptr(display))
+				} else {
+					Err(self.get_error().unwrap())
+				}
 			}
 		}
 
@@ -1802,18 +1838,20 @@ mod egl1_5 {
 			native_window: NativeWindowType,
 			attrib_list: &[Attrib],
 		) -> Result<Surface, Error> {
-			check_attrib_list(attrib_list)?;
+			unsafe {
+				check_attrib_list(attrib_list)?;
 
-			let surface = self.api.eglCreatePlatformWindowSurface(
-				display.as_ptr(),
-				config.as_ptr(),
-				native_window,
-				attrib_list.as_ptr(),
-			);
-			if surface != NO_SURFACE {
-				Ok(Surface::from_ptr(surface))
-			} else {
-				Err(self.get_error().unwrap())
+				let surface = self.api.eglCreatePlatformWindowSurface(
+					display.as_ptr(),
+					config.as_ptr(),
+					native_window,
+					attrib_list.as_ptr(),
+				);
+				if surface != NO_SURFACE {
+					Ok(Surface::from_ptr(surface))
+				} else {
+					Err(self.get_error().unwrap())
+				}
 			}
 		}
 
@@ -1839,18 +1877,20 @@ mod egl1_5 {
 			native_pixmap: NativePixmapType,
 			attrib_list: &[Attrib],
 		) -> Result<Surface, Error> {
-			check_attrib_list(attrib_list)?;
+			unsafe {
+				check_attrib_list(attrib_list)?;
 
-			let surface = self.api.eglCreatePlatformPixmapSurface(
-				display.as_ptr(),
-				config.as_ptr(),
-				native_pixmap,
-				attrib_list.as_ptr(),
-			);
-			if surface != NO_SURFACE {
-				Ok(Surface::from_ptr(surface))
-			} else {
-				Err(self.get_error().unwrap())
+				let surface = self.api.eglCreatePlatformPixmapSurface(
+					display.as_ptr(),
+					config.as_ptr(),
+					native_pixmap,
+					attrib_list.as_ptr(),
+				);
+				if surface != NO_SURFACE {
+					Ok(Surface::from_ptr(surface))
+				} else {
+					Err(self.get_error().unwrap())
+				}
 			}
 		}
 

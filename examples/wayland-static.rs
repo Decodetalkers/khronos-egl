@@ -4,13 +4,13 @@ use egl::API as egl;
 use gl::types::{GLboolean, GLchar, GLenum, GLint, GLuint, GLvoid};
 use std::ffi::CStr;
 use std::ptr;
-use wayland_client::globals::{registry_queue_init, GlobalListContents};
+use wayland_client::globals::{GlobalListContents, registry_queue_init};
 use wayland_client::protocol::wl_display::WlDisplay;
 use wayland_client::protocol::wl_registry;
-use wayland_client::{delegate_noop, Connection, Dispatch, Proxy};
+use wayland_client::{Connection, Dispatch, Proxy, delegate_noop};
 use wayland_client::{
-	protocol::{wl_compositor::WlCompositor, wl_surface::WlSurface},
 	EventQueue,
+	protocol::{wl_compositor::WlCompositor, wl_surface::WlSurface},
 };
 use wayland_protocols::xdg::shell::client::xdg_toplevel::XdgToplevel;
 
