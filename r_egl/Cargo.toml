@@ -1,0 +1,49 @@
+[package]
+name = "r-egl"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Rust bindings for EGL"
+repository = "https://github.com/timothee-haudebourg/khronos-egl"
+documentation = "https://docs.rs/khronos-egl"
+readme = "README.md"
+keywords = ["egl", "gl", "khronos", "opengl"]
+build = "build.rs"
+edition.workspace = true
+
+[features]
+default = ["1_5"]
+static = ["pkg-config"]
+no-pkg-config = []
+dynamic = ["libloading"]
+"1_5" = ["1_4"]
+"1_4" = ["1_3"]
+"1_3" = ["1_2"]
+"1_2" = ["1_1"]
+"1_1" = ["1_0"]
+"1_0" = []
+
+[dependencies]
+libc = "^0.2"
+libloading = { version = "^0.9", optional = true }
+
+[build-dependencies]
+pkg-config = { version = "^0.3", optional = true }
+
+[dev-dependencies]
+gl.workspace = true
+wayland-client.workspace = true
+wayland-protocols = { workspace = true, features = ["client"] }
+wayland-egl.workspace = true
+
+[[example]]
+name = "wayland-static"
+required-features = ["static"]
+
+[[example]]
+name = "wayland-dynamic"
+required-features = ["dynamic"]
+
+[[example]]
+name = "load-minimal"
+required-features = ["dynamic", "1_4"]
