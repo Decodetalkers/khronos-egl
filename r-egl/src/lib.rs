@@ -173,6 +173,15 @@ pub struct Instance<T> {
 	api: T,
 }
 
+/// Add clone for Instance
+impl<T: Clone> Clone for Instance<T> {
+	fn clone(&self) -> Self {
+		Self {
+			api: self.api.clone(),
+		}
+	}
+}
+
 impl<T> Instance<T> {
 	/// Cast the API.
 	#[inline(always)]
