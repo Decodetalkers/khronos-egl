@@ -2099,9 +2099,11 @@ macro_rules! api {
 
 			/// Wraps the given library but does not load the symbols.
 			pub(crate) unsafe fn unloaded(lib: L, version: Version) -> Self {
-				Dynamic {
-					raw: RawDynamic::unloaded(lib, version),
-					_api_version: std::marker::PhantomData
+				unsafe {
+					Dynamic {
+						raw: RawDynamic::unloaded(lib, version),
+						_api_version: std::marker::PhantomData
+					}
 				}
 			}
 		}
@@ -2129,30 +2131,32 @@ macro_rules! api {
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the input library complies to the EGL API.
 			pub unsafe fn load_from(lib: L) -> Result<Dynamic<L, EGL1_0>, libloading::Error> {
-				let mut result = Dynamic::unloaded(lib, Version::EGL1_0);
+				unsafe {
+					let mut result = Dynamic::unloaded(lib, Version::EGL1_0);
 
-				$(
-					match $id::load_from(&mut result.raw) {
-						Ok(()) => result.raw.set_version(Version::$id),
-						Err(libloading::Error::DlSymUnknown) => {
-							if Version::$id == Version::EGL1_0 {
-								return Err(libloading::Error::DlSymUnknown) // we require at least EGL 1.0.
-							} else {
-								return Ok(result)
-							}
-						},
-						Err(libloading::Error::DlSym { source }) => {
-							if Version::$id == Version::EGL1_0 {
-								return Err(libloading::Error::DlSym { source }) // we require at least EGL 1.0.
-							} else {
-								return Ok(result)
-							}
-						},
-						Err(e) => return Err(e)
-					}
-				)*
+					$(
+						match $id::load_from(&mut result.raw) {
+							Ok(()) => result.raw.set_version(Version::$id),
+							Err(libloading::Error::DlSymUnknown) => {
+								if Version::$id == Version::EGL1_0 {
+									return Err(libloading::Error::DlSymUnknown) // we require at least EGL 1.0.
+								} else {
+									return Ok(result)
+								}
+							},
+							Err(libloading::Error::DlSym { source }) => {
+								if Version::$id == Version::EGL1_0 {
+									return Err(libloading::Error::DlSym { source }) // we require at least EGL 1.0.
+								} else {
+									return Ok(result)
+								}
+							},
+							Err(e) => return Err(e)
+						}
+					)*
 
-				Ok(result)
+					Ok(result)
+				}
 			}
 		}
 
@@ -2169,7 +2173,9 @@ macro_rules! api {
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the input library complies to the EGL API.
 			pub unsafe fn load_from(lib: L) -> Result<Instance<Dynamic<L, EGL1_0>>, libloading::Error> {
-				Ok(Instance::new(Dynamic::<L, EGL1_0>::load_from(lib)?))
+				unsafe {
+					Ok(Instance::new(Dynamic::<L, EGL1_0>::load_from(lib)?))
+				}
 			}
 		}
 
@@ -2291,7 +2297,7 @@ macro_rules! api {
 			///
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the input library complies to the EGL API.
-			pub unsafe fn load_from_filename<P: libloading::AsFilename>(filename: P) -> Result<DynamicInstance<EGL1_0>, libloading::Error> {
+			pub unsafe fn load_from_filename<P: libloading::AsFilename>(filename: P) -> Result<DynamicInstance<EGL1_0>, libloading::Error> { unsafe {
 				#[cfg(target_os = "linux")]
 				let lib: libloading::Library = {
 					// On Linux, load library with `RTLD_NOW | RTLD_NODELETE` to fix a SIGSEGV
@@ -2301,7 +2307,7 @@ macro_rules! api {
 				#[cfg(not(target_os = "linux"))]
 				let lib = libloading::Library::new(filename)?;
 				Self::load_from(lib)
-			}
+			}}
 
 			#[inline(always)]
 			/// Create an EGL instance by finding and loading the `libEGL.so.1` or `libEGL.so` library.
@@ -2310,9 +2316,9 @@ macro_rules! api {
 			///
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the found library complies to the EGL API.
-			pub unsafe fn load() -> Result<DynamicInstance<EGL1_0>, libloading::Error> {
+			pub unsafe fn load() -> Result<DynamicInstance<EGL1_0>, libloading::Error> { unsafe {
 				Self::load_from_filename("libEGL.so.1").or(Self::load_from_filename("libEGL.so"))
-			}
+			}}
 		}
 	};
 	(@api_type ( $($pred:ident : $p_version:literal { $(fn $p_name:ident ($($p_arg:ident : $p_atype:ty ),* ) -> $p_rtype:ty ;)* })* ) $id:ident : $version:literal { $(fn $name:ident ($($arg:ident : $atype:ty ),* ) -> $rtype:ty ;)* }) => {
@@ -2343,13 +2349,13 @@ macro_rules! api {
 
 				$(
 					let name = stringify!($name).as_bytes();
-					let symbol = lib.get::<unsafe extern "system" fn($($atype ),*) -> $rtype>(name)?;
+					let symbol = unsafe { lib.get::<unsafe extern "system" fn($($atype ),*) -> $rtype>(name)? };
 					#[cfg(unix)]
-					let ptr = (&symbol.into_raw().into_raw()) as *const *mut _ as *const unsafe extern "system" fn($($atype ),*) -> $rtype;
+					let ptr = (&unsafe { symbol.into_raw() }.into_raw()) as *const *mut _ as *const unsafe extern "system" fn($($atype ),*) -> $rtype;
 					#[cfg(windows)]
-					let ptr = (&symbol.into_raw().into_raw()) as *const _ as *const unsafe extern "system" fn($($atype ),*) -> $rtype;
+					let ptr = (&unsafe {symbol.into_raw() }.into_raw()) as *const _ as *const unsafe extern "system" fn($($atype ),*) -> $rtype;
 					assert!(!ptr.is_null());
-					raw.$name = std::mem::MaybeUninit::new(*ptr);
+					raw.$name = unsafe { std::mem::MaybeUninit::new(*ptr) };
 				)*
 
 				Ok(())
@@ -2362,9 +2368,9 @@ macro_rules! api {
 			unsafe impl<L: std::borrow::Borrow<libloading::Library>> api::$pred for Dynamic<L, $id> {
 				$(
 					#[inline(always)]
-					unsafe fn $p_name(&self, $($p_arg : $p_atype),*) -> $p_rtype {
+					unsafe fn $p_name(&self, $($p_arg : $p_atype),*) -> $p_rtype { unsafe {
 						(self.raw.$p_name.assume_init())($($p_arg),*)
-					}
+					}}
 				)*
 			}
 		)*
@@ -2374,9 +2380,9 @@ macro_rules! api {
 		unsafe impl<L: std::borrow::Borrow<libloading::Library>> api::$id for Dynamic<L, $id> {
 			$(
 				#[inline(always)]
-				unsafe fn $name(&self, $($arg : $atype),*) -> $rtype {
+				unsafe fn $name(&self, $($arg : $atype),*) -> $rtype { unsafe {
 					(self.raw.$name.assume_init())($($arg),*)
-				}
+				}}
 			)*
 		}
 
@@ -2438,7 +2444,7 @@ macro_rules! api {
 			impl<L: std::borrow::Borrow<libloading::Library>> Upcast<Dynamic<L, $id>> for Dynamic<L, $pred> {
 				fn upcast(&self) -> Option<&Dynamic<L, $id>> {
 					if self.version() >= Version::$id {
-						Some(unsafe { std::mem::transmute(self) }) // this is safe because both types have the same repr.
+						Some(unsafe { std::mem::transmute::<&Dynamic<L, $pred>, &Dynamic<L, $id>>(self) }) // this is safe because both types have the same repr.
 					} else {
 						None
 					}
@@ -2450,7 +2456,7 @@ macro_rules! api {
 			impl<L: std::borrow::Borrow<libloading::Library>> Upcast<Instance<Dynamic<L, $id>>> for Instance<Dynamic<L, $pred>> {
 				fn upcast(&self) -> Option<&Instance<Dynamic<L, $id>>> {
 					if self.version() >= Version::$id {
-						Some(unsafe { std::mem::transmute(self) }) // this is safe because both types have the same repr.
+						Some(unsafe { std::mem::transmute::<&Instance<Dynamic<L, $pred>>, &Instance<Dynamic<L, $id>>>(self) }) // this is safe because both types have the same repr.
 					} else {
 						None
 					}
@@ -2468,7 +2474,7 @@ macro_rules! api {
 			///
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the input library complies to the EGL API.
-			pub unsafe fn load_required(lib: L) -> Result<Dynamic<L, $id>, LoadError<libloading::Error>> {
+			pub unsafe fn load_required(lib: L) -> Result<Dynamic<L, $id>, LoadError<libloading::Error>> { unsafe {
 				match Dynamic::<L, EGL1_0>::load_from(lib) {
 					Ok(dynamic) => {
 						let provided = dynamic.version();
@@ -2482,7 +2488,7 @@ macro_rules! api {
 					},
 					Err(e) => Err(LoadError::Library(e))
 				}
-			}
+			}}
 		}
 
 		#[cfg(feature="dynamic")]
@@ -2494,9 +2500,9 @@ macro_rules! api {
 			///
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the input library complies to the EGL API.
-			pub unsafe fn load_required_from(lib: L) -> Result<Instance<Dynamic<L, $id>>, LoadError<libloading::Error>> {
+			pub unsafe fn load_required_from(lib: L) -> Result<Instance<Dynamic<L, $id>>, LoadError<libloading::Error>> { unsafe {
 				Ok(Instance::new(Dynamic::<L, $id>::load_required(lib)?))
-			}
+			}}
 		}
 
 		#[cfg(feature="dynamic")]
@@ -2515,15 +2521,17 @@ macro_rules! api {
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the input library complies to the EGL API.
 			pub unsafe fn load_required_from_filename<P: libloading::AsFilename>(filename: P) -> Result<DynamicInstance<$id>, LoadError<libloading::Error>> {
+				unsafe {
 				#[cfg(target_os = "linux")]
-				let lib: libloading::Library = {
-					// On Linux, load library with `RTLD_NOW | RTLD_NODELETE` to fix a SIGSEGV
-					// See https://github.com/timothee-haudebourg/khronos-egl/issues/14 for more details.
-					libloading::os::unix::Library::open(Some(filename), 0x2 | 0x1000).map_err(LoadError::Library)?.into()
-				};
-				#[cfg(not(target_os = "linux"))]
-				let lib = libloading::Library::new(filename).map_err(LoadError::Library)?;
-				Self::load_required_from(lib)
+					let lib: libloading::Library = {
+						// On Linux, load library with `RTLD_NOW | RTLD_NODELETE` to fix a SIGSEGV
+						// See https://github.com/timothee-haudebourg/khronos-egl/issues/14 for more details.
+						libloading::os::unix::Library::open(Some(filename), 0x2 | 0x1000).map_err(LoadError::Library)?.into()
+					};
+					#[cfg(not(target_os = "linux"))]
+					let lib = libloading::Library::new(filename).map_err(LoadError::Library)?;
+					Self::load_required_from(lib)
+				}
 			}
 
 			#[inline(always)]
@@ -2535,7 +2543,9 @@ macro_rules! api {
 			/// ## Safety
 			/// This is fundamentally unsafe since there are no guaranties the found library complies to the EGL API.
 			pub unsafe fn load_required() -> Result<DynamicInstance<$id>, LoadError<libloading::Error>> {
-			    Self::load_required_from_filename("libEGL.so.1").or(Self::load_required_from_filename("libEGL.so"))
+				unsafe {
+					Self::load_required_from_filename("libEGL.so.1").or(Self::load_required_from_filename("libEGL.so"))
+				}
 			}
 		}
 	}
