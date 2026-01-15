@@ -1,13 +1,14 @@
 [workspace]
 resolver = "3"
-members = ["./r_egl", "r_egl_wayland"]
+members = ["./r-egl", "r-egl-wayland"]
 
 [workspace.dependencies]
 gl = "^0.14"
 wayland-client = "^0.31"
 wayland-protocols = "^0.32"
 wayland-egl = "^0.32"
-r_egl = { path = "./r_egl", version = "1.0.0" }
+r-egl = { path = "./r-egl", version = "0.1.0" }
+wayland-backend = "^0.3"
 
 [workspace.package]
 version = "0.1.0"
@@ -18,3 +19,4 @@ authors = [
 ]
 license = "MIT/Apache-2.0"
 edition = "2024"
+repository = "https://github.com/waycrate/egl_wayland_utils"

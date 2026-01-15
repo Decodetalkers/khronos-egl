@@ -1,0 +1,16 @@
+[package]
+name = "r-egl-wayland"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "lib for egl when used with wayland-client"
+keywords = ["egl", "gl", "opengl", "wayland-client"]
+readme = "README.md"
+
+[dependencies]
+wayland-client.workspace = true
+wayland-protocols = { workspace = true, features = ["client"] }
+r-egl = { workspace = true, features = ["static"] }
+wayland-backend = { workspace = true, features = ["client_system"] }

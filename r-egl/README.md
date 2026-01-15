@@ -1,9 +1,9 @@
 # Rust bindings for EGL
 
 <table><tr>
-  <td><a href="https://docs.rs/khronos-egl">Documentation</a></td>
-  <td><a href="https://crates.io/crates/khronos-egl">Crate informations</a></td>
-  <td><a href="https://github.com/timothee-haudebourg/khronos-egl">Repository</a></td>
+  <td><a href="https://docs.rs/r-egl">Documentation</a></td>
+  <td><a href="https://crates.io/crates/r-egl">Crate information</a></td>
+  <td><a href="https://github.com/waycrate/egl_wayland_utils">Repository</a></td>
 </tr></table>
 
 This crate provides a binding for the Khronos EGL 1.5 API.
@@ -35,16 +35,19 @@ khronos-egl = {version = ..., features = ["static", "no-pkg-config"]}
 Here is a simple example showing how to use this library to create an EGL context when static linking is enabled.
 
 ```rust
-extern crate khronos_egl as egl;
+use r_egl as egl;
+use wayland_client::Connection;
+use wayland_client::Proxy;
 
 fn main() -> Result<(), egl::Error> {
 	// Create an EGL API instance.
 	// The `egl::Static` API implementation is only available when the `static` feature is enabled.
 	let egl = egl::Instance::new(egl::Static);
+    let connection = Connection::connect_to_env().expect("unable to connect to the wayland server");
+    let wayland_display = connection.display();
 
-	let wayland_display = wayland_client::Display::connect_to_env().expect("unable to connect to the wayland server");
-	let display = egl.get_display(wayland_display.get_display_ptr() as *mut std::ffi::c_void).unwrap();
-	egl.initialize(display)?;
+    let display = unsafe { egl.get_display(wayland_display.id().as_ptr() as *mut std::ffi::c_void) }.unwrap();
+    egl.initialize(display)?;
 
 	let attributes = [
 		egl::RED_SIZE, 8,
@@ -75,7 +78,7 @@ you can get this pointer using the `Display::get_display_ptr` method.
 
 #### Static API Instance
 
-It may be bothering in some applications to pass the `Instance` to every fonction that needs to call the EGL API.
+It may be bothering in some applications to pass the `Instance` to every function that needs to call the EGL API.
 One workaround would be to define a static `Instance`,
 which should be possible to define at compile time using static linking.
 However this is not yet supported by the stable `rustc` compiler.
@@ -106,7 +109,7 @@ let egl = unsafe { egl::DynamicInstance::<egl::EGL1_4>::load_required_from(lib).
 
 Here, `egl::EGL1_4` is used to specify what is the minimum required version of EGL that must be provided by `libEGL.so.1`.
 This will return a `DynamicInstance<egl::EGL1_4>`, however in that case where `libEGL.so.1` provides a more recent version of EGL,
-you can still upcast ths instance to provide version specific features:
+you can still upcast this instance to provide version specific features:
 ```rust
 match egl.upcast::<egl::EGL1_5>() {
 	Some(egl1_5) => {
@@ -142,7 +145,7 @@ Here's how to work around this:
 ```rust
 #[link(name = "EGL")]
 #[link(name = "GLESv2")]
-extern {}
+unsafe extern "C" {}
 ```
 
 ## License
