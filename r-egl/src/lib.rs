@@ -568,7 +568,6 @@ mod egl1_0 {
 		fn try_from(e: Int) -> Result<Error, Int> {
 			use Error::*;
 			match e {
-				SUCCESS => Ok(SuccessButError),
 				NOT_INITIALIZED => Ok(NotInitialized),
 				BAD_ACCESS => Ok(BadAccess),
 				BAD_ALLOC => Ok(BadAlloc),
@@ -1103,10 +1102,14 @@ mod egl1_0 {
 		/// from the point of view of a user.
 		pub(crate) fn get_error_for_sure(&self) -> Error {
 			unsafe {
-				self.api
-					.eglGetError()
-					.try_into()
-					.expect("should receive an error")
+				let err_code = self.api.eglGetError();
+				// We should not return success code to error, but at the logic inner, we need keep
+				// the logic do not panic. Sometimes it will fail successfully. I cannot find out
+				// why
+				if err_code == SUCCESS {
+					return Error::SuccessButError;
+				}
+				err_code.try_into().expect("should receive an error")
 			}
 		}
 		/// Return error information.
