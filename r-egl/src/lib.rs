@@ -640,7 +640,7 @@ mod egl1_0 {
 				{
 					Ok(count as usize)
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -707,7 +707,7 @@ mod egl1_0 {
 						configs.set_len(count as usize);
 						Ok(())
 					} else {
-						Err(self.get_error())
+						Err(self.get_error_for_sure())
 					}
 				}
 			}
@@ -765,7 +765,7 @@ mod egl1_0 {
 				{
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -798,7 +798,7 @@ mod egl1_0 {
 				if context != NO_CONTEXT {
 					Ok(Context(context))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -824,7 +824,7 @@ mod egl1_0 {
 				if surface != NO_SURFACE {
 					Ok(Surface(surface))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -857,7 +857,7 @@ mod egl1_0 {
 				if surface != NO_SURFACE {
 					Ok(Surface(surface))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -897,7 +897,7 @@ mod egl1_0 {
 				if surface != NO_SURFACE {
 					Ok(Surface(surface))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -908,7 +908,7 @@ mod egl1_0 {
 				if self.api.eglDestroyContext(display.as_ptr(), ctx.as_ptr()) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -923,7 +923,7 @@ mod egl1_0 {
 				{
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -946,7 +946,7 @@ mod egl1_0 {
 				{
 					Ok(value)
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -982,7 +982,7 @@ mod egl1_0 {
 				{
 					Ok(count as usize)
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1036,7 +1036,7 @@ mod egl1_0 {
 						configs.set_len(count as usize);
 						Ok(())
 					} else {
-						Err(self.get_error())
+						Err(self.get_error_for_sure())
 					}
 				}
 			}
@@ -1101,13 +1101,25 @@ mod egl1_0 {
 		/// since this function is automatically called by any wrapper function
 		/// returning a `Result` when necessary, this function may only return `None`
 		/// from the point of view of a user.
-		pub fn get_error(&self) -> Error {
+		pub(crate) fn get_error_for_sure(&self) -> Error {
 			unsafe {
 				self.api
 					.eglGetError()
 					.try_into()
 					.expect("should receive an error")
 			}
+		}
+		/// Return error information.
+		///
+		/// Return the error of the last called EGL function in the current thread, or
+		/// `None` if the error is set to `SUCCESS`.
+		///
+		/// Note that since a call to `eglGetError` sets the error to `SUCCESS`, and
+		/// since this function is automatically called by any wrapper function
+		/// returning a `Result` when necessary, this function may only return `None`
+		/// from the point of view of a user.
+		pub fn get_error(&self) -> Option<Error> {
+			unsafe { self.api.eglGetError().try_into().ok() }
 		}
 
 		/// Return a GL or an EGL extension function.
@@ -1137,7 +1149,7 @@ mod egl1_0 {
 				{
 					Ok((major, minor))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1167,7 +1179,7 @@ mod egl1_0 {
 				if self.api.eglMakeCurrent(display.as_ptr(), draw, read, ctx) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1188,7 +1200,7 @@ mod egl1_0 {
 				{
 					Ok(value)
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1211,7 +1223,7 @@ mod egl1_0 {
 				if !c_str.is_null() {
 					Ok(CStr::from_ptr(c_str))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1234,7 +1246,7 @@ mod egl1_0 {
 				{
 					Ok(value)
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1245,7 +1257,7 @@ mod egl1_0 {
 				if self.api.eglSwapBuffers(display.as_ptr(), surface.as_ptr()) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1256,7 +1268,7 @@ mod egl1_0 {
 				if self.api.eglTerminate(display.as_ptr()) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1267,7 +1279,7 @@ mod egl1_0 {
 				if self.api.eglWaitGL() == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1278,7 +1290,7 @@ mod egl1_0 {
 				if self.api.eglWaitNative(engine) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1327,7 +1339,7 @@ mod egl1_1 {
 				{
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1347,7 +1359,7 @@ mod egl1_1 {
 				{
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1368,7 +1380,7 @@ mod egl1_1 {
 				{
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1380,7 +1392,7 @@ mod egl1_1 {
 				if self.api.eglSwapInterval(display.as_ptr(), interval) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1492,7 +1504,7 @@ mod egl1_2 {
 				if self.api.eglBindAPI(api) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1527,7 +1539,7 @@ mod egl1_2 {
 				if surface != NO_SURFACE {
 					Ok(Surface::from_ptr(surface))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1538,7 +1550,7 @@ mod egl1_2 {
 				if self.api.eglReleaseThread() == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1549,7 +1561,7 @@ mod egl1_2 {
 				if self.api.eglWaitClient() == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1749,7 +1761,7 @@ mod egl1_5 {
 				if sync != NO_SYNC {
 					Ok(Sync(sync))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1765,7 +1777,7 @@ mod egl1_5 {
 				if self.api.eglDestroySync(display.as_ptr(), sync.as_ptr()) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1790,7 +1802,7 @@ mod egl1_5 {
 				if status != FALSE as Int {
 					Ok(status)
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1818,7 +1830,7 @@ mod egl1_5 {
 				{
 					Ok(value)
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1850,7 +1862,7 @@ mod egl1_5 {
 				if image != NO_IMAGE {
 					Ok(Image(image))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1861,7 +1873,7 @@ mod egl1_5 {
 				if self.api.eglDestroyImage(display.as_ptr(), image.as_ptr()) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1899,7 +1911,7 @@ mod egl1_5 {
 				if display != NO_DISPLAY {
 					Ok(Display::from_ptr(display))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1940,7 +1952,7 @@ mod egl1_5 {
 				if surface != NO_SURFACE {
 					Ok(Surface::from_ptr(surface))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1981,7 +1993,7 @@ mod egl1_5 {
 				if surface != NO_SURFACE {
 					Ok(Surface::from_ptr(surface))
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}
@@ -1995,7 +2007,7 @@ mod egl1_5 {
 				if self.api.eglWaitSync(display.as_ptr(), sync.as_ptr(), flags) == TRUE {
 					Ok(())
 				} else {
-					Err(self.get_error())
+					Err(self.get_error_for_sure())
 				}
 			}
 		}

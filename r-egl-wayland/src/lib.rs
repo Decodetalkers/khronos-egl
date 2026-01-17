@@ -6,13 +6,18 @@ pub use egl::api::EGL1_5;
 
 pub use egl::API as EGL_INSTALCE;
 
+pub type Result<T> = std::result::Result<T, egl::Error>;
+
 /// The trait help reduce unsafe
 pub trait WayEglTrait {
-	fn get_display_wl(&self, display: &WlDisplay) -> Option<egl::Display>;
+	fn get_display_wl(&self, display: &WlDisplay) -> Result<egl::Display>;
 }
 
 impl<T: egl::api::EGL1_5> WayEglTrait for egl::Instance<T> {
-	fn get_display_wl(&self, display: &WlDisplay) -> Option<egl::Display> {
-		unsafe { self.get_display(display.id().as_ptr() as *mut std::ffi::c_void) }
+	fn get_display_wl(&self, display: &WlDisplay) -> Result<egl::Display> {
+		match unsafe { self.get_display(display.id().as_ptr() as *mut std::ffi::c_void) } {
+			Some(display) => Ok(display),
+			None => Err(EGL_INSTALCE.get_error().expect("here should be an error")),
+		}
 	}
 }
