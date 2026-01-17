@@ -420,7 +420,7 @@ mod egl1_0 {
 	pub const WIDTH: Int = 0x3057;
 	pub const WINDOW_BIT: Int = 0x0004;
 
-	/// LINUX part
+	/// Linux dma_buf buf
 	/// https://registry.khronos.org/EGL/extensions/EXT/EGL_EXT_image_dma_buf_import.txt
 	pub const LINUX_DMA_BUF_EXT: Int = 0x3270;
 	pub const LINUX_DRAM_FOURCC_EXT: Int = 0x3271;
@@ -437,6 +437,20 @@ mod egl1_0 {
 	pub const SAMPLE_RANGE_HINT_EXT: Int = 0x327C;
 	pub const YUV_CHROMA_HORIZONTAL_SITING_HINT_EXT: Int = 0x327D;
 	pub const YUV_CHROMA_VERTICAL_SITING_HINT_EXT: Int = 0x327E;
+
+	/// Linux dma_buf modifiers
+	/// https://registry.khronos.org/EGL/extensions/EXT/EGL_EXT_image_dma_buf_import_modifiers.txt
+	pub const DMA_BUF_PLANE0_MODIFIER_LO_EXT: Int = 0x3443;
+	pub const DMA_BUF_PLANE0_MODIFIER_HI_EXT: Int = 0x3444;
+	pub const DMA_BUF_PLANE1_MODIFIER_LO_EXT: Int = 0x3445;
+	pub const DMA_BUF_PLANE1_MODIFIER_HI_EXT: Int = 0x3446;
+	pub const DMA_BUF_PLANE2_MODIFIER_LO_EXT: Int = 0x3447;
+	pub const DMA_BUF_PLANE2_MODIFIER_HI_EXT: Int = 0x3448;
+	pub const DMA_BUF_PLANE3_FD_EXT: Int = 0x3440;
+	pub const DMA_BUF_PLANE3_OFFSET_EXT: Int = 0x3441;
+	pub const DMA_BUF_PLANE3_PITCH_EXT: Int = 0x3442;
+	pub const DMA_BUF_PLANE3_MODIFIER_LO_EXT: Int = 0x3449;
+	pub const DMA_BUF_PLANE3_MODIFIER_HI_EXT: Int = 0x344A;
 
 	/// EGL errors.
 	/// https://registry.khronos.org/EGL/api/1.1/EGL/egl.h
