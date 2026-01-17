@@ -1,14 +1,10 @@
-use std::sync::LazyLock;
-
 pub use r_egl;
 use r_egl as egl;
 use wayland_client::{Proxy, protocol::wl_display::WlDisplay};
 
 pub use egl::api::EGL1_5;
 
-/// The static egl type
-pub static EGL_INSTALCE: LazyLock<egl::Instance<egl::Static>> =
-	LazyLock::new(|| egl::Instance::new(egl::Static));
+pub use egl::API as EGL_INSTALCE;
 
 /// The trait help reduce unsafe
 pub trait WayEglTrait {
