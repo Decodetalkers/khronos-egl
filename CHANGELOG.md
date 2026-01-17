@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Upgrade dependency `libloading`: ^0.6 -> ^0.7.
 ### Removed
-- `nightly` feature hich is no longer needed since `const_fn` is stabilized.
+- `nightly` feature which is no longer needed since `const_fn` is stabilized.
 
 ## [3.0.2]
 ### Changed

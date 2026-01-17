@@ -424,7 +424,7 @@ mod egl1_0 {
 	/// https://registry.khronos.org/EGL/api/1.1/EGL/egl.h
 	#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 	pub enum Error {
-		/// In the egl.h, the success is also in the error field. And yes, even successed, the
+		/// In the egl.h, the success is also in the error field. And yes, even succeeded, the
 		/// function also may be failed, I do not know why, so I add this part
 		SuccessButError,
 		/// EGL is not initialized, or could not be initialized, for the specified
