@@ -12,7 +12,7 @@
 //!
 //! You must enable static linking using the `static` feature in your `Cargo.toml`:
 //! ```toml
-//! khronos-egl = { version = ..., features = ["static"] }
+//! r-egl = { version = ..., features = ["static"] }
 //! ```
 //!
 //! This will add a dependency to the [`pkg-config`](https://crates.io/crates/pkg-config) crate,

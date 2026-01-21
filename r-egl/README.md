@@ -20,7 +20,7 @@ or dynamically loading the EGL library at runtime.
 
 You must enable static linking using the `static` feature in your `Cargo.toml`:
 ```toml
-khronos-egl = { version = ..., features = ["static"] }
+r-egl = { version = ..., features = ["static"] }
 ```
 
 This will add a dependency to the [`pkg-config`](https://crates.io/crates/pkg-config) crate,
@@ -29,7 +29,7 @@ necessary to find the EGL library at compile time.
 If you wish to disable linking EGL in this crate, and provide linking in
 your crate instead, enable the `no-pkg-config` feature.
 ```toml
-khronos-egl = {version = ..., features = ["static", "no-pkg-config"]}
+r-egl = {version = ..., features = ["static", "no-pkg-config"]}
 ```
 
 Here is a simple example showing how to use this library to create an EGL context when static linking is enabled.
@@ -95,7 +95,7 @@ use egl::API as egl;
 Dynamic linking allows your application to accept multiple versions of EGL and be more flexible.
 You must enable dynamic linking using the `dynamic` feature in your `Cargo.toml`:
 ```toml
-khronos-egl = { version = ..., features = ["dynamic"] }
+r-egl = { version = ..., features = ["dynamic"] }
 ```
 
 This will add a dependency to the [`libloading`](https://crates.io/crates/libloading) crate,
